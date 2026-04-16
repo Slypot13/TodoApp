@@ -1,8 +1,6 @@
 const API_URL = "http://localhost:3000/tasks";
 
-// -------------------------
 // CAROUSEL
-// -------------------------
 const images = [
   "images/img1.png",
   "images/img2.png",
@@ -20,10 +18,7 @@ function changeImage() {
 
 setInterval(changeImage, 3000);
 
-// -------------------------
 // TODO APP
-// -------------------------
-
 // Charger et afficher les tâches
 function loadTasks() {
   fetch(API_URL)

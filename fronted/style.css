@@ -1,6 +1,6 @@
 body {
   font-family: Arial, sans-serif;
-  background-color: #f4f6f8;
+  background-color: #afabab;
   margin: 0;
   padding: 0;
 }
@@ -8,10 +8,10 @@ body {
 .container {
   max-width: 700px;
   margin: 40px auto;
-  background-color: white;
+  background-color: rgb(255, 255, 255);
   padding: 30px;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 4px 12px rgba(255, 0, 0, 0.12);
 }
 
 h1 {
@@ -51,17 +51,17 @@ button {
   padding: 10px 14px;
   border: none;
   border-radius: 8px;
-  background-color: #2d89ef;
+  background-color: #ff00dd;
   color: white;
   cursor: pointer;
 }
 
 button:hover {
-  background-color: #1b6fc9;
+  background-color: #99046c;
 }
 
 #errorMessage {
-  color: red;
+  color: rgb(255, 0, 242);
   margin-bottom: 15px;
 }
 
