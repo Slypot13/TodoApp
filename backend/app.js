@@ -14,6 +14,11 @@ app.get('/', (req, res) => {
 
 app.use('/', tasksRouter);
 
+// gestion d'erreur : route inexistante
+app.use((req, res) => {
+  res.status(404).json({ message: 'Route non trouvée' });
+});
+
 app.listen(port, () => {
   console.log(`Serveur lancé sur http://localhost:${port}`);
 });
