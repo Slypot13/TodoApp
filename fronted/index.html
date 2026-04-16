@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Todo App</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Ma Todo List</h1>
+
+    <div class="carousel">
+      <img id="carouselImage" src="images/img1.png" alt="Image drôle">
+    </div>
+
+    <div class="form-zone">
+      <input type="text" id="taskInput" placeholder="Nouvelle tâche">
+      <button onclick="addTask()">Ajouter</button>
+    </div>
+
+    <p id="errorMessage"></p>
+
+    <ul id="taskList"></ul>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

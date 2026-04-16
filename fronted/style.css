@@ -1,0 +1,86 @@
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f4f6f8;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  max-width: 700px;
+  margin: 40px auto;
+  background-color: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.carousel {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.carousel img {
+  width: 250px;
+  max-width: 100%;
+  height: auto;
+  border-radius: 12px;
+  transition: opacity 0.5s ease;
+}
+
+.form-zone {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+#taskInput {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+button {
+  padding: 10px 14px;
+  border: none;
+  border-radius: 8px;
+  background-color: #2d89ef;
+  color: white;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #1b6fc9;
+}
+
+#errorMessage {
+  color: red;
+  margin-bottom: 15px;
+}
+
+#taskList {
+  list-style: none;
+  padding: 0;
+}
+
+#taskList li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background-color: #f9f9f9;
+  margin-bottom: 10px;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.task-text {
+  flex: 1;
+}
