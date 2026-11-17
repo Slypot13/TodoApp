@@ -2,8 +2,8 @@
 
 Application Todo List : un client web (Vite, JavaScript) qui appelle une API REST (Node.js / Express) stockant les tâches dans PostgreSQL. Les deux sont déployés sur Scalingo.
 
-- Client en ligne : https://todo-client-XXXX.osc-fr1.scalingo.io <!-- à remplacer -->
-- API en ligne : https://todo-api-XXXX.osc-fr1.scalingo.io/health <!-- à remplacer -->
+- Client en ligne : https://todoapp-client.osc-fr1.scalingo.io
+- API en ligne : https://todoapp.osc-fr1.scalingo.io/health (documentation : https://todoapp.osc-fr1.scalingo.io/docs)
 
 Fonctionnalités : afficher, ajouter, terminer / annuler et supprimer des tâches, avec gestion d'erreurs côté API (400, 404, 500, 503) et côté interface.
 
@@ -124,37 +124,48 @@ Les valeurs ne sont jamais commitées : seuls les fichiers `.env.example` le son
 
 ## Procédure de déploiement (reproductible)
 
-Prérequis : un compte Scalingo et la [CLI Scalingo](https://doc.scalingo.com/tools/cli/start) (`scalingo login`). Remplacer `todo-api` et `todo-client` par vos noms d'apps.
+Prérequis : un compte Scalingo et la [CLI Scalingo](https://doc.scalingo.com/tools/cli/start) (`scalingo login`). Apps utilisées : `todoapp` (API) et `todoapp-client` (client).
+
+Compte Scalingo créé via GitHub (sans mot de passe) : ajouter sa clé SSH publique dans **User settings → SSH Keys**, puis `scalingo login --ssh --ssh-identity ~/.ssh/id_ed25519`.
+
+Premier déploiement réalisé sans liaison GitHub, par `git push` vers chaque app (le monorepo entier est envoyé, `PROJECT_DIR` choisit le dossier) :
+
+```bash
+git remote add scalingo-api    git@ssh.osc-fr1.scalingo.com:todoapp.git
+git remote add scalingo-client git@ssh.osc-fr1.scalingo.com:todoapp-client.git
+git push scalingo-api main:master
+git push scalingo-client main:master
+```
 
 ### 1. API et base
 
 ```bash
-scalingo create todo-api --region osc-fr1
-scalingo --app todo-api env-set PROJECT_DIR=api
-scalingo --app todo-api addons-add postgresql postgresql-starter-512
+scalingo create todoapp --region osc-fr1
+scalingo --app todoapp env-set PROJECT_DIR=api
+scalingo --app todoapp addons-add postgresql postgresql-starter-512
 ```
 
-Dans le dashboard de `todo-api` : onglet **Deploy → Configuration**, lier le dépôt GitHub `Slypot13/TodoApp`, branche `main`, puis lancer un déploiement manuel. Le build utilise le buildpack Node.js (détecté via `api/package.json`), puis `postdeploy` joue les migrations.
+Dans le dashboard de `todoapp` : onglet **Deploy → Configuration**, lier le dépôt GitHub `Slypot13/TodoApp`, branche `main`, puis lancer un déploiement manuel. Le build utilise le buildpack Node.js (détecté via `api/package.json`), puis `postdeploy` joue les migrations.
 
 ```bash
-scalingo --app todo-api run npm run seed     # une seule fois
-curl https://todo-api.osc-fr1.scalingo.io/health
+scalingo --app todoapp run npm run seed     # une seule fois
+curl https://todoapp.osc-fr1.scalingo.io/health
 ```
 
 ### 2. Client
 
 ```bash
-scalingo create todo-client --region osc-fr1
-scalingo --app todo-client env-set PROJECT_DIR=client \
-  VITE_API_URL=https://todo-api.osc-fr1.scalingo.io
+scalingo create todoapp-client --region osc-fr1
+scalingo --app todoapp-client env-set PROJECT_DIR=client \
+  VITE_API_URL=https://todoapp.osc-fr1.scalingo.io
 ```
 
-Lier le même dépôt GitHub à `todo-client` et déployer. Scalingo exécute `npm run build` (Vite → `dist/`) puis `npm start` (`serve -s dist`, qui renvoie `index.html` pour toute URL inconnue : un rafraîchissement ne donne jamais 404).
+Lier le même dépôt GitHub à `todoapp-client` et déployer. Scalingo exécute `npm run build` (Vite → `dist/`) puis `npm start` (`serve -s dist`, qui renvoie `index.html` pour toute URL inconnue : un rafraîchissement ne donne jamais 404).
 
 ### 3. Relier les deux
 
 ```bash
-scalingo --app todo-api env-set CORS_ORIGINS=https://todo-client.osc-fr1.scalingo.io
+scalingo --app todoapp env-set CORS_ORIGINS=https://todoapp-client.osc-fr1.scalingo.io
 ```
 
 (`env-set` redémarre l'app.) Ouvrir le client, ajouter / terminer / supprimer une tâche, et vérifier dans l'onglet Réseau qu'il n'y a pas d'erreur CORS.
@@ -169,8 +180,8 @@ Pour chaque app, dans **Deploy → Configuration** : activer **Auto Deploy** sur
 
 | Ressource | Taille | Estimation (HT/mois) | Réel relevé |
 |---|---|---|---|
-| App `todo-api` | 1 conteneur S | ≈ 7,20 € | _à compléter_ |
-| App `todo-client` | 1 conteneur S | ≈ 7,20 € | _à compléter_ |
+| App `todoapp` | 1 conteneur S | ≈ 7,20 € | _à compléter_ |
+| App `todoapp-client` | 1 conteneur S | ≈ 7,20 € | _à compléter_ |
 | PostgreSQL | Starter 512 | ≈ 7,20 € | _à compléter_ |
 | **Total** | | **≈ 21,60 €** | _à compléter_ |
 
@@ -187,20 +198,20 @@ Dimensionnement : voir l'onglet **Metrics** de chaque app. _À compléter : mém
 ### 1. Lire les logs
 
 ```bash
-scalingo --app todo-api logs --lines 200        # logs de l'API
-scalingo --app todo-api logs -f                 # en continu
-scalingo --app todo-api addons                  # récupérer l'ID de l'addon PostgreSQL
-scalingo --app todo-api logs --addon <addon-id> --lines 200   # logs de la base
-scalingo --app todo-api ps                       # état des conteneurs
+scalingo --app todoapp logs --lines 200        # logs de l'API
+scalingo --app todoapp logs -f                 # en continu
+scalingo --app todoapp addons                  # récupérer l'ID de l'addon PostgreSQL
+scalingo --app todoapp logs --addon <addon-id> --lines 200   # logs de la base
+scalingo --app todoapp ps                       # état des conteneurs
 ```
 
-Erreur provoquée pour l'exercice : _à compléter : par exemple `scalingo --app todo-api env-set CORS_ORIGINS=https://mauvaise-url.fr`, constater l'erreur CORS dans le navigateur et ce qu'affichent les logs, puis remettre la bonne valeur._
+Erreur provoquée pour l'exercice : _à compléter : par exemple `scalingo --app todoapp env-set CORS_ORIGINS=https://mauvaise-url.fr`, constater l'erreur CORS dans le navigateur et ce qu'affichent les logs, puis remettre la bonne valeur._
 
 Diagnostic rapide :
 
 | Symptôme | Où regarder |
 |---|---|
-| `/health` répond 503 | la base : logs de l'addon, `scalingo --app todo-api pgsql-console` |
+| `/health` répond 503 | la base : logs de l'addon, `scalingo --app todoapp pgsql-console` |
 | Erreur CORS dans le navigateur | `CORS_ORIGINS` de l'API contient-elle l'URL exacte du client (https, sans `/` final) ? |
 | Le client appelle une mauvaise URL | `VITE_API_URL` du client, puis redéployer le client |
 | Déploiement en échec | onglet Deployments → logs du build ; `PROJECT_DIR` bien défini ? migration en erreur ? |
@@ -222,11 +233,11 @@ Attention : un retour arrière du code n'annule pas une migration déjà jouée.
 
 ```bash
 # Lister les sauvegardes automatiques et en télécharger une
-scalingo --app todo-api --addon postgresql backups
-scalingo --app todo-api --addon postgresql backups-download --backup <backup-id>
+scalingo --app todoapp --addon postgresql backups
+scalingo --app todoapp --addon postgresql backups-download --backup <backup-id>
 
 # Restaurer : ouvrir un tunnel vers la base (garder ce terminal ouvert)
-scalingo --app todo-api db-tunnel SCALINGO_POSTGRESQL_URL
+scalingo --app todoapp db-tunnel SCALINGO_POSTGRESQL_URL
 # Dans un autre terminal, avec l'URL affichée par le tunnel :
 tar -xzf <archive-telechargee>.tar.gz
 pg_restore --clean --if-exists --no-owner --no-privileges \
