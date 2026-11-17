@@ -174,26 +174,50 @@ scalingo --app todoapp env-set CORS_ORIGINS=https://todoapp-client.osc-fr1.scali
 
 Pour chaque app, dans **Deploy → Configuration** : activer **Auto Deploy** sur `main` et l'option qui attend la réussite de la CI. Les workflows `.github/workflows/api.yml` et `client.yml` lancent lint + tests (et le build pour le client) uniquement quand leur dossier change. Une pull request qui casse un test reste rouge et n'est donc jamais déployée.
 
+#### Testé le 17/11/2026 : un code rouge n'atteint pas la production
+
+1. Commit `6cb4815` ajoutant un test volontairement faux (`assert.equal(1, 2)`) poussé sur `main`.
+2. GitHub Actions : workflow **API** en échec (`failure`).
+3. Scalingo : **aucun déploiement** de `6cb4815`, ni pour `todoapp` ni pour `todoapp-client` ; la production reste sur le commit précédent.
+4. Correction (`git revert`, commit `c92cf87`) poussée : CI verte, puis déploiement automatique de `todoapp` (statut `success`), sans action manuelle.
+
 ---
 
 ## Coût mensuel
 
-| Ressource | Taille | Estimation (HT/mois) | Réel relevé |
+| Ressource | Taille | Estimation (HT/mois) |
+|---|---|---|
+| App `todoapp` (API) | 1 conteneur S (256 Mo) | ≈ 7,20 € |
+| App `todoapp-client` | 1 conteneur S (256 Mo) | ≈ 7,20 € |
+| PostgreSQL | Starter 512 | ≈ 7,20 € |
+| **Total** | | **≈ 21,60 €** |
+
+Estimation d'après la [grille tarifaire Scalingo](https://scalingo.com/pricing) (à revérifier, les prix évoluent). Facturation à la minute : une app arrêtée (`scalingo --app <app> scale web:0`) ne coûte plus rien en conteneur.
+
+**Coût réel** : relevé dans le dashboard, onglet **Consumption** (rapport mis à jour chaque jour à minuit UTC).
+
+| Période relevée | `todoapp` | `todoapp-client` | Total |
 |---|---|---|---|
-| App `todoapp` | 1 conteneur S | ≈ 7,20 € | _à compléter_ |
-| App `todoapp-client` | 1 conteneur S | ≈ 7,20 € | _à compléter_ |
-| PostgreSQL | Starter 512 | ≈ 7,20 € | _à compléter_ |
-| **Total** | | **≈ 21,60 €** | _à compléter_ |
+| à partir du 17/11/2026 | … € | … € | … € |
 
-Estimation d'après la [grille tarifaire Scalingo](https://scalingo.com/pricing) (à revérifier, les prix évoluent). Le réel se relève dans le dashboard, section **Billing**, après quelques jours de fonctionnement. Facturation à la minute : une app arrêtée (`scalingo --app <app> scale web:0`) ne coûte plus rien en conteneur.
+Écart avec l'estimation : … (à commenter une fois le relevé fait).
 
-Dimensionnement : voir l'onglet **Metrics** de chaque app. _À compléter : mémoire max observée … Mo sur 256 Mo (limite d'un conteneur S), CPU …, la taille S suffit / ne suffit pas._
+Les apps ont d'abord été créées en taille **M** (taille par défaut), puis ramenées en **S** (`scalingo --app <app> scale web:1:S`) : la taille M aurait doublé le coût des conteneurs pour rien.
+
+#### Dimensionnement (relevé le 17/11/2026, `scalingo --app <app> stats` et onglet Metrics)
+
+| App | Mémoire max observée | CPU |
+|---|---|---|
+| `todoapp` (API) | 17 Mo / 256 Mo | ~0 % |
+| `todoapp-client` | 66 Mo / 256 Mo | ~0 % |
+
+La taille S suffit largement : moins de 30 % de la mémoire utilisée au pic, aucun swap.
 
 ---
 
 ## En cas de panne
 
-> Commandes à tester réellement, puis à noter ici avec la date et le résultat obtenu.
+Toutes les commandes de cette section ont été réellement exécutées sur la production le 17/11/2026.
 
 ### 1. Lire les logs
 
@@ -257,20 +281,39 @@ Attention : un retour arrière du code n'annule pas une migration déjà jouée.
 
 ### 3. Sauvegarder et restaurer la base
 
-```bash
-# Lister les sauvegardes automatiques et en télécharger une
-scalingo --app todoapp --addon postgresql backups
-scalingo --app todoapp --addon postgresql backups-download --backup <backup-id>
+Scalingo sauvegarde la base automatiquement chaque nuit. On peut aussi déclencher une sauvegarde à la main (avant une migration risquée, par exemple).
 
-# Restaurer : ouvrir un tunnel vers la base (garder ce terminal ouvert)
-scalingo --app todoapp db-tunnel SCALINGO_POSTGRESQL_URL
-# Dans un autre terminal, avec l'URL affichée par le tunnel :
-tar -xzf <archive-telechargee>.tar.gz
-pg_restore --clean --if-exists --no-owner --no-privileges \
-  -d "postgres://<user>:<password>@127.0.0.1:10000/<db>" <fichier>.pgsql
+```bash
+ADDON=$(scalingo --app todoapp addons | grep PostgreSQL | awk '{print $4}')   # ID de l'addon (ad-...)
+
+# Sauvegarder
+scalingo --app todoapp --addon $ADDON backups-create
+scalingo --app todoapp --addon $ADDON backups                     # liste
+scalingo --app todoapp --addon $ADDON backups-download --output backup.tar.gz   # la plus récente
+
+# Restaurer
+tar -xzf backup.tar.gz                                             # donne un fichier .pgsql (format pg_dump custom)
+scalingo --app todoapp db-tunnel -i ~/.ssh/id_ed25519 SCALINGO_POSTGRESQL_URL   # terminal 1, à laisser ouvert (port 10000)
+
+# Terminal 2 : pg_restore via Docker (pas besoin d'installer PostgreSQL sur le poste).
+# <user>, <password>, <db> : ceux de SCALINGO_POSTGRESQL_URL (scalingo --app todoapp env).
+docker run --rm -v "$PWD:/backup:ro" postgres:18 pg_restore \
+  --clean --if-exists --no-owner --no-privileges \
+  -d "postgres://<user>:<password>@host.docker.internal:10000/<db>?sslmode=prefer" \
+  /backup/<fichier>.pgsql
 ```
 
-_À compléter : date du test de restauration, durée, vérification (nombre de tâches avant / après)._
+Depuis Docker, `host.docker.internal` désigne le poste local, où le tunnel écoute. Sans Docker, utiliser `pg_restore` directement avec `127.0.0.1:10000`.
+
+#### Sauvegarde et restauration testées le 17/11/2026
+
+1. État initial : 3 tâches en production.
+2. `backups-create` → « Backup successfully finished », puis `backups-download` → archive de 1,6 Ko contenant `20261117151201_todoapp_7896.pgsql`.
+3. Perte de données simulée : `DELETE /tasks/2` → 2 tâches.
+4. Tunnel + `pg_restore` (code de sortie 0, quelques secondes).
+5. Vérification : `GET /tasks` renvoie de nouveau les **3 tâches**, dont la n° 2 ; une création puis une suppression de tâche fonctionnent toujours.
+
+Remarque : avec la CLI 1.41, `backups` affichait une liste vide juste après la sauvegarde, alors que `backups-download` la trouvait bien. Mettre à jour la CLI (https://cli.scalingo.com) en cas de doute.
 
 Références : [Logs](https://doc.scalingo.com/platform/app/logs) · [Sauvegarder PostgreSQL](https://doc.scalingo.com/databases/postgresql/shared-resources/guides/backing-up) · [Restaurer PostgreSQL](https://doc.scalingo.com/databases/postgresql/shared-resources/guides/restoring)
 
