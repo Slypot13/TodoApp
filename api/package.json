@@ -14,7 +14,7 @@
     "migrate": "node src/migrate.js",
     "seed": "node src/seed.js",
     "lint": "eslint .",
-    "test": "node --test test/"
+    "test": "node --test \"test/**/*.test.js\""
   },
   "repository": {
     "type": "git",
