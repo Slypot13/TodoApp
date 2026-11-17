@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
+const swaggerUi = require('swagger-ui-express');
 const config = require('./config');
+const openapi = require('./openapi');
 const pool = require('./db');
 const tasksRouter = require('./routes/tasks');
 
@@ -10,8 +12,12 @@ app.use(express.json());
 app.use(cors({ origin: config.corsOrigins }));
 
 app.get('/', (req, res) => {
-  res.json({ message: 'Todo API', health: '/health', tasks: '/tasks' });
+  res.json({ message: 'Todo API', health: '/health', tasks: '/tasks', docs: '/docs' });
 });
+
+// Documentation Swagger
+app.get('/openapi.json', (req, res) => res.json(openapi));
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapi));
 
 // Vérifie que l'API tourne ET que la base répond.
 app.get('/health', async (req, res) => {

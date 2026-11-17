@@ -25,7 +25,8 @@ Monorepo : un seul dépôt GitHub, deux apps Scalingo. Chacune pointe vers son d
 
 ```
 api/                     API Express
-  src/app.js             routes /, /health, /tasks
+  src/app.js             routes /, /health, /docs, /tasks
+  src/openapi.js         spécification OpenAPI affichée sur /docs
   src/routes/tasks.js    CRUD des tâches (SQL paramétré)
   src/config.js          configuration lue depuis l'environnement
   src/migrate.js         exécute les migrations SQL non encore jouées
@@ -46,6 +47,7 @@ docker-compose.yml       PostgreSQL 16 local (bases todo et todo_test)
 | Méthode | Route         | Réponse                                   |
 |---------|---------------|-------------------------------------------|
 | GET     | `/health`     | 200 si l'API et la base répondent, sinon 503 |
+| GET     | `/docs`       | documentation Swagger (spec brute : `/openapi.json`) |
 | GET     | `/tasks`      | 200, liste des tâches                     |
 | POST    | `/tasks`      | 201, `{ "title": "...", "done": false }` |
 | PUT     | `/tasks/:id`  | 200, modifie `title` et/ou `done`         |

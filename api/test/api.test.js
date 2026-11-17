@@ -91,6 +91,12 @@ test('identifiant non numérique : 400', async () => {
   assert.equal((await request('DELETE', '/tasks/abc')).status, 400);
 });
 
+test('GET /docs affiche Swagger UI', async () => {
+  const response = await fetch(baseUrl + '/docs/');
+  assert.equal(response.status, 200);
+  assert.match(await response.text(), /swagger-ui/i);
+});
+
 test('route inconnue : 404', async () => {
   assert.equal((await request('GET', '/nope')).status, 404);
 });
