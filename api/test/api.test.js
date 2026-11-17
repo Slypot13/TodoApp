@@ -100,7 +100,3 @@ test('GET /docs affiche Swagger UI', async () => {
 test('route inconnue : 404', async () => {
   assert.equal((await request('GET', '/nope')).status, 404);
 });
-
-test('démo CI rouge : ce test échoue volontairement', () => {
-  assert.equal(1, 2);
-});
