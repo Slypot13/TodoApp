@@ -239,6 +239,20 @@ git push origin main
 
 En urgence, depuis le dashboard : **Deployments**, choisir un déploiement précédent réussi, puis le redéployer (voir la [doc Rollback](https://doc.scalingo.com/platform/app/rollback)).
 
+En urgence, depuis le terminal (sans attendre la CI) : renvoyer à Scalingo le dernier commit sain.
+
+```bash
+git push --force scalingo-client <sha-sain>:refs/heads/master   # ou scalingo-api pour l'API
+```
+
+Puis **toujours** `git revert` du commit fautif sur `main`, sinon le prochain push le remet en production.
+
+#### Rollback testé le 17/11/2026
+
+1. Commit volontairement fautif (titre du client remplacé par « VERSION CASSÉE ») poussé sur `main` : CI verte, Auto Deploy, en ligne en ~100 s.
+2. Rollback d'urgence : `git push --force scalingo-client 9540e94:refs/heads/master` → ancien titre de retour en ligne en **47 s**.
+3. `git revert` du commit fautif puis `git push origin main` : `main` et la production sont de nouveau identiques.
+
 Attention : un retour arrière du code n'annule pas une migration déjà jouée. Une migration qui supprime ou renomme une colonne doit être écrite pour rester compatible avec la version précédente.
 
 ### 3. Sauvegarder et restaurer la base
