@@ -1,0 +1,34 @@
+{
+  "name": "todoapp-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "API REST de la Todo App (Express + PostgreSQL)",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "migrate": "node src/migrate.js",
+    "seed": "node src/seed.js",
+    "lint": "eslint .",
+    "test": "node --test test/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Slypot13/TodoApp.git"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "pg": "^8.13.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.20.0",
+    "eslint": "^9.20.0",
+    "nodemon": "^3.1.9"
+  }
+}
