@@ -205,7 +205,19 @@ scalingo --app todoapp logs --addon <addon-id> --lines 200   # logs de la base
 scalingo --app todoapp ps                       # état des conteneurs
 ```
 
-Erreur provoquée pour l'exercice : _à compléter : par exemple `scalingo --app todoapp env-set CORS_ORIGINS=https://mauvaise-url.fr`, constater l'erreur CORS dans le navigateur et ce qu'affichent les logs, puis remettre la bonne valeur._
+#### Erreur provoquée et diagnostiquée (testé le 17/11/2026)
+
+1. **Panne** : `scalingo --app todoapp env-set CORS_ORIGINS=https://mauvaise-url.example` puis `scalingo --app todoapp restart`.
+2. **Symptôme** : le client affiche « Impossible de charger les tâches. ». Dans la console du navigateur :
+   `Access to fetch at 'https://todoapp.osc-fr1.scalingo.io/tasks' from origin 'https://todoapp-client.osc-fr1.scalingo.io' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.`
+   Onglet Réseau : requête `tasks` en rouge, statut « CORS error ».
+3. **Diagnostic** :
+   - `curl https://todoapp.osc-fr1.scalingo.io/health` → 200 : l'API et la base vont bien, le problème n'est pas côté serveur.
+   - `scalingo --app todoapp logs --lines 200` → aucune erreur : la requête aboutit (200), c'est le **navigateur** qui bloque la réponse. Une erreur CORS ne se voit donc pas dans les logs de l'API.
+   - `scalingo --app todoapp env | grep CORS` → `CORS_ORIGINS=https://mauvaise-url.example` : cause trouvée.
+4. **Réparation** : `scalingo --app todoapp env-set CORS_ORIGINS=https://todoapp-client.osc-fr1.scalingo.io` puis `restart`.
+
+Piège rencontré : tant que le cache du navigateur était actif, l'erreur n'apparaissait pas (réponse `304` réutilisant l'ancien en-tête CORS). Pour reproduire un problème CORS : DevTools → Network → cocher **Disable cache**, puis recharger.
 
 Diagnostic rapide :
 
